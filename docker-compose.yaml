@@ -1,0 +1,20 @@
+name: yacht
+services:
+  app:
+    image: selfhostedpro/yacht:latest
+    container_name: yacht
+    hostname: yacht
+    restart: always
+    pull_policy: always
+    ports:
+      - 172.17.0.1:59096:8000
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - '/var/lib/srv/$USER/docker/bluesky-social/pds/latest/rootfs/config/yacht:/config'
+    networks:
+      - yacht
+
+networks:
+  yacht:
+    name: yacht
+    external: false
