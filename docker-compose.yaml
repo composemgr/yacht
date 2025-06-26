@@ -1,0 +1,29 @@
+# nginx proxy address - http://172.17.0.1:59096
+
+name: yacht
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: selfhostedpro/yacht:latest
+    container_name: yacht
+    hostname: yacht
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    ports:
+      - 172.17.0.1:59096:8000
+    volumes:
+      - './rootfs/config/yacht:/config'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    networks:
+      - yacht
+
+networks:
+  yacht:
+    name: yacht
+    external: false
