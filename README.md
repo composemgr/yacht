@@ -45,7 +45,7 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/config/yacht` - Data storage
+- `./volumes/config/yacht` - Data storage
 
 ## 🔍 Logging
 
