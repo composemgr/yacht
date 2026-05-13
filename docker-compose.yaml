@@ -17,6 +17,8 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: yacht
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       SECRET_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
       ADMIN_EMAIL: ${APP_ADMIN_USER:-admin}@${BASE_DOMAIN_NAME:-example.com}
       DISABLE_AUTH: false
@@ -27,8 +29,30 @@ services:
       - '/var/run/docker.sock:/var/run/docker.sock'
     networks:
       - yacht
+      - proxy
+      - cloudflare
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://yacht:8000'
+      - 'cloudflare.hostname=yacht.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.yacht.entrypoints=http'
+      - 'traefik.http.routers.yacht-secure.tls=true'
+      - 'traefik.http.routers.yacht.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.yacht-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.yacht.middlewares=yacht-https-redirect'
+      - 'traefik.http.routers.yacht-secure.entrypoints=https'
+      - 'traefik.http.routers.yacht-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.yacht-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.yacht-secure.service=yacht'
+      - 'traefik.http.services.yacht.loadbalancer.server.port=8000'
 
 networks:
   yacht:
     name: yacht
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
