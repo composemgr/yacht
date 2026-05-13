@@ -11,10 +11,15 @@ services:
   app:
     image: selfhostedpro/yacht:latest
     container_name: yacht
-    hostname: yacht
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
     pull_policy: always
     logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      SECRET_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
+      ADMIN_EMAIL: ${APP_ADMIN_USER:-admin}@${BASE_DOMAIN_NAME:-example.com}
+      DISABLE_AUTH: false
     ports:
       - 172.17.0.1:59096:8000
     volumes:
