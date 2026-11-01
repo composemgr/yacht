@@ -1,0 +1,48 @@
+name: yacht
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: selfhostedpro/yacht:latest
+    container_name: yacht
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: yacht
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      SECRET_KEY: ${APP_SECRET_KEY:-replace-with-a-random-32-byte-hex-string}
+      ADMIN_EMAIL: ${APP_ADMIN_USER:-admin}@${BASE_DOMAIN_NAME:-example.com}
+      DISABLE_AUTH: 'false'
+    volumes:
+      - './volumes/config/yacht:/config:z'
+      - '/var/run/docker.sock:/var/run/docker.sock:z'
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
+      - 'traefik.http.routers.yacht.entrypoints=http'
+      - 'traefik.http.routers.yacht.rule=Host(`${BASE_HOST_NAME:-$HOSTNAME}`)'
+      - 'traefik.http.routers.yacht.middlewares=yacht-https-redirect'
+      - 'traefik.http.middlewares.yacht-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.yacht-secure.entrypoints=https'
+      - 'traefik.http.routers.yacht-secure.rule=Host(`${BASE_HOST_NAME:-$HOSTNAME}`)'
+      - 'traefik.http.routers.yacht-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.yacht-secure.service=yacht'
+      - 'traefik.http.services.yacht.loadbalancer.server.port=8000'
+    networks:
+      - yacht
+      - traefik
+
+networks:
+  yacht:
+    name: yacht
+    external: false
+  traefik:
+    external: true

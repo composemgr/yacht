@@ -1,4 +1,4 @@
-# nginx proxy address - http://172.17.0.1:59096
+# nginx proxy address - http://172.17.0.1:64393
 
 name: yacht
 x-logging: &default-logging
@@ -11,6 +11,7 @@ services:
   app:
     image: selfhostedpro/yacht:latest
     container_name: yacht
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
     hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
     pull_policy: always
@@ -19,40 +20,18 @@ services:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: yacht
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
-      SECRET_KEY: ${APP_SECRET_KEY:-changeme_secret_key_min_32_chars}
+      SECRET_KEY: ${APP_SECRET_KEY:-replace-with-a-random-32-byte-hex-string}
       ADMIN_EMAIL: ${APP_ADMIN_USER:-admin}@${BASE_DOMAIN_NAME:-example.com}
-      DISABLE_AUTH: false
+      DISABLE_AUTH: 'false'
     ports:
-      - 172.17.0.1:59096:8000
+      - '172.17.0.1:64393:8000'
     volumes:
-      - './volumes/config/yacht:/config'
-      - '/var/run/docker.sock:/var/run/docker.sock'
+      - './volumes/config/yacht:/config:z'
+      - '/var/run/docker.sock:/var/run/docker.sock:z'
     networks:
       - yacht
-      - proxy
-      - cloudflare
-    labels:
-      - 'traefik.enable=true'
-      - 'cloudflare.enable=true'
-      - 'traefik.docker.network=proxy'
-      - 'cloudflare.service=http://yacht:8000'
-      - 'cloudflare.hostname=yacht.${CLOUDFLARE_ZONE_NAME:-}'
-      - 'traefik.http.routers.yacht.entrypoints=http'
-      - 'traefik.http.routers.yacht-secure.tls=true'
-      - 'traefik.http.routers.yacht.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.middlewares.yacht-https-redirect.redirectscheme.scheme=https'
-      - 'traefik.http.routers.yacht.middlewares=yacht-https-redirect'
-      - 'traefik.http.routers.yacht-secure.entrypoints=https'
-      - 'traefik.http.routers.yacht-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.routers.yacht-secure.tls.certresolver=cloudflare'
-      - 'traefik.http.routers.yacht-secure.service=yacht'
-      - 'traefik.http.services.yacht.loadbalancer.server.port=8000'
 
 networks:
   yacht:
     name: yacht
     external: false
-  proxy:
-    external: true
-  cloudflare:
-    external: true

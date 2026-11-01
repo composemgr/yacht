@@ -4,7 +4,10 @@ Web interface for managing Docker containers
 
 ## 📋 Description
 
-Web interface for managing Docker containers
+Yacht is a web UI for creating and managing Docker containers from a browser,
+with project templates for common self-hosted stacks. This deployment needs
+the host Docker socket to create containers, and runs behind the host nginx
+proxy.
 
 ## 🚀 Services
 
@@ -21,7 +24,8 @@ curl -q -LSsf "https://raw.githubusercontent.com/composemgr/yacht/main/docker-co
 ```bash
 git clone "https://github.com/composemgr/yacht" ~/.local/srv/docker/yacht
 cd ~/.local/srv/docker/yacht
-docker compose up -d
+cp default.env .env
+docker compose --env-file .env up -d
 ```
 
 ### Option 3: Using composemgr
@@ -35,47 +39,93 @@ composemgr install yacht
 
 ```shell
 TZ=America/New_York
+APP_ADMIN_USER=admin
+APP_SECRET_KEY=replace-with-a-random-32-byte-hex-string
 ```
 
 See `docker-compose.yaml` for complete list of configurable options.
 
+### Environment Files
+
+`default.env.sample` holds the full set of variables and is copied to `.env`
+before starting the stack:
+
+```bash
+cp default.env .env
+docker compose --env-file .env up -d
+```
+
+`app.env.sample` holds the app-specific overrides and is copied to `app.env`:
+
+```bash
+cp app.env.sample app.env
+```
+
+`composemgr up` applies `app.env` and `default.env` automatically. Raw
+`docker compose` commands need `--env-file .env` to pick up the same values.
+
+### Reverse Proxy
+
+Three standalone compose files ship in this repo:
+
+| File | Use |
+|------|-----|
+| `docker-compose.yaml` | Default, published on `172.17.0.1:64393` |
+| `docker-compose.traefik.yaml` | Behind an existing external `traefik` network |
+| `docker-compose.tunnel.yaml` | Behind an existing external `cloudflare` tunnel network |
+
+```bash
+docker compose -f docker-compose.traefik.yaml --env-file .env up -d
+```
+
 ## 🌐 Access
 
-- **Web Interface**: http://172.17.0.1:59096
+- **Web Interface**: http://172.17.0.1:64393
 
 ## 📂 Volumes
 
-- `./volumes/config/yacht` - Data storage
+- `./volumes/config/yacht` - Yacht configuration and application templates
+- `/var/run/docker.sock` - Host Docker socket, required to manage containers
+
+## 🔐 Security
+
+- Set `APP_SECRET_KEY` to a random 32 character or longer value
+- The container has full control of the host Docker daemon, treat access to
+  the UI as root access to the host
+- `DISABLE_AUTH` must stay `false`
+- Use HTTPS via the reverse proxy in production
+- Regularly update Docker images for security patches
 
 ## 🔍 Logging
 
 ```shell
-docker compose logs -f app
+docker compose --env-file .env logs -f app
 ```
 
 ## 🛠️ Management
 
 ```bash
 # Start services
-docker compose up -d
+docker compose --env-file .env up -d
 
 # Stop services
-docker compose down
+docker compose --env-file .env down
 
 # Update to latest images
-docker compose pull && docker compose up -d
+docker compose --env-file .env pull && docker compose --env-file .env up -d
 
 # View logs
-docker compose logs -f
+docker compose --env-file .env logs -f
 
 # Restart services
-docker compose restart
+docker compose --env-file .env restart
 ```
 
 ## 📋 Requirements
 
 - Docker Engine 20.10+
 - Docker Compose V2+
+- Access to the host Docker socket
 
 ## 🤝 Author
 
